@@ -45,7 +45,7 @@ func processLogin(this js.Value, p []js.Value) interface{} {
 	}
 	random := make(chan []byte)
 	go func() {
-		resp, err := http.Get("http://localhost:8080/hello")
+		resp, err := http.Get("/hello")
 		if err != nil {
 			js.Global().Get("alert").Invoke("Error: " + err.Error())
 			close(random)
