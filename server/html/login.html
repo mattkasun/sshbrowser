@@ -1,0 +1,48 @@
+{{ define "login" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" type="text/css">
+    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        let mod, inst;
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+            mod = result.module;
+            inst = result.instance;
+            go.run(inst);
+        });
+        function validateEmail() {
+            var email = document.getElementById("username").value;
+            var output = document.getElementById("output");
+            if (email.length == 0) {
+                alert("Email cannot be empty");
+                return;
+            }
+            if (email.indexOf("@") == -1) {
+                alert("Email must contain @");
+                return;
+            }
+        }
+    </script>
+</head>
+
+<body class="w3-theme-dark">
+    <div class="w3-container w3-padding w3-center">
+		<h1>Login using SSH Key</h1>
+		<p>Choose private ssh key for signing (key does not leave browser)</p>
+		<input type="file" id="file"/>
+		<p><label for="username">Username</label>
+		<input type="text" id="username" name="username" placeholder="username" 
+			onchange=validateEmail() required/></p>
+		<p><input type="text" id="passphrase" hidden/></p>
+		<p><button type="button" id="button">Login</button></p>
+    </div>
+    </script>
+</body>
+
+</html>
+{{end}}
