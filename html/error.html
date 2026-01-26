@@ -1,0 +1,23 @@
+{{ define "error" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Registration</title>
+    <link rel="icon" href:="/htm/ssh.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css" type="text/css">
+</head>
+
+<body class="theme-dark">
+    <div class="center">
+        <h1>Error</h1>
+        <p>An Error was encounted processing your request</p>
+        <p>{{.}}</p>
+        <p><a href="/login">Login</a></p>
+        <p><a href="/page/ip">What is my IP?</a></p>
+        <p><a href="/register">Register</a></p>
+    </div>
+</body>
+
+</html>
+{{end}}

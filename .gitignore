@@ -1,0 +1,4 @@
+html/main.wasm
+wasm/*
+!wasm/build.sh
+!wasm/main.go

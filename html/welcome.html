@@ -1,0 +1,31 @@
+{{define "welcome"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Demo</title>
+    <link rel="icon" href:="/htm/ssh.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css" type="text/css">
+</head>
+
+<body class="theme-dark">
+    <div class="center">
+        <h1>sshbrowser demo </h1>
+        <p>use ssh keys to web application login</p>
+        <h2>Steps</h2>
+        <p>1. Register by uploading your ssh public key </p>
+        <p><a href="/register">Register</a></p>
+        <p>2. login to server using private ssh key</p>
+        <p>(all processing is done in browser)</p>
+        <p><a href="/login">Login</a></p>
+        <p>3. browse site</p>
+    </div>
+    <footer class="center">
+        <a href="https://www.buymeacoffee.com/mkasun" target="_blank"><img src="/bmc-button.svg" alt="Buy Me A Coffee"
+                style="height: 60px !important;width: 217px !important;"></a>
+    </footer>
+    </footer>
+</body>
+
+</html>
+{{end}}

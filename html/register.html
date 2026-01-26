@@ -1,0 +1,44 @@
+{{ define "register" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Registration</title>
+    <link rel="icon" href:="/htm/ssh.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css" type="text/css">
+</head>
+
+<body class="theme-dark">
+    <div class="center">
+        <h1>Registration</h1>
+        <p>Select public ssh key file to upload</p>
+        <p><input type="file" id="file-selector"></p>
+        <form action="/register" method="post">
+            <label>User Email</label>
+            <input type="text" id="user" name="user" required>
+            <input type="text" id="key" name="key" hidden>
+            <input type="text" name="bot" hidden>
+            <p>
+                <button class="theme-dark" type="submit">Register</button>
+            </p>
+            <a href="/login">Login</a><br>
+        </form>
+    </div>
+    <script>
+        const keyInput = document.getElementById('key');
+        document.getElementById('file-selector').addEventListener('change', function () {
+            let reader = new FileReader();
+            reader.onload = function () {
+                let key = reader.result;
+                const parts = key.split(" ");
+                let good = false
+                document.getElementById('user').value = parts[2];
+                document.getElementById('key').value = key;
+            }
+            reader.readAsText(this.files[0]);
+        })
+    </script>
+</body>
+
+</html>
+{{end}}

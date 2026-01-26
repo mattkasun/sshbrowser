@@ -1,0 +1,32 @@
+{{define "main"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Demo</title>
+    <link rel="icon" href:="/htm/ssh.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css" type="text/css">
+</head>
+
+<body class="theme-dark">
+    <div class="center">
+        <h1>sshbrowser login demo - page {{.Page}}</h1>
+        <h2>Boring places to visit</h2>
+        {{range .Links}}
+        <p><a href="/page/{{.}}">Page {{.}}</a></p>
+        {{end}}
+        <h2>slightly less boring places to visit</h2>
+        <p><a href="/page/ip">what is my ip</a></p>
+        <p><a href="https://github.com/mattkasun/sshbrowser">this repository on github</a></p>
+        <p><a href="https://nusak.ca">author's web page</a></p>
+    </div>
+    <footer class="center">
+        <p></p><a href="/logout">Logout</a></p>
+        <a href="https://www.buymeacoffee.com/mkasun" target="_blank"><img src="/bmc-button.svg" alt="Buy Me A Coffee"
+                style="height: 60px !important;width: 217px !important;"></a>
+    </footer>
+    </footer>
+</body>
+
+</html>
+{{end}}

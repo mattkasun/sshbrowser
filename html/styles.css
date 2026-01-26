@@ -1,0 +1,15 @@
+.theme-dark {
+    color: #fff !important;
+    background-color: #000000 !important
+}
+
+.center {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+a {
+    color: inherit;
+    display: inline-block;
+}

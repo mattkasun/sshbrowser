@@ -1,3 +1,5 @@
+//go:build js && wasm
+
 package main
 
 import (
@@ -11,13 +13,18 @@ import (
 	"syscall/js"
 	"time"
 
-	"github.com/mattkasun/sshbrowser"
 	"golang.org/x/crypto/ssh"
 )
 
+// Login contains login information.
+type Login struct {
+	Message string        `json:"message"`
+	Sig     ssh.Signature `json:"sig"`
+	User    string        `json:"user"`
+}
+
 var (
 	fileInput  js.Value
-	fileName   js.Value
 	userName   js.Value
 	passphrase js.Value
 	key        []byte
@@ -68,7 +75,7 @@ func processLogin(this js.Value, p []js.Value) interface{} {
 			js.Global().Get("alert").Invoke("Error sigining message " + err.Error())
 			return
 		}
-		login := sshbrowser.Login{
+		login := Login{
 			Message: string(data),
 			Sig:     *sig,
 			User:    username,
