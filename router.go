@@ -63,7 +63,7 @@ func staticPages(router *http.ServeMux) {
 		http.ServeFile(w, r, "html/wasm_exec.js")
 	})
 	router.HandleFunc("GET /main.wasm", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/main.wasm.gz")
+		http.ServeFile(w, r, "html/main.wasm")
 	})
 	router.HandleFunc("GET /bmc-button.svg", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "html/bmc-button.svg")
@@ -87,7 +87,7 @@ func plainPages(router *http.ServeMux) {
 	router.HandleFunc("POST /register", register)
 	router.HandleFunc("/logout", func(w http.ResponseWriter, _ *http.Request) {
 		cookie.Clear(w, cookieName, false)
-		render(w, "login", nil)
+		render(w, "welcome", nil)
 	})
 }
 

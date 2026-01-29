@@ -8,10 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/mail"
 	"syscall/js"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -23,45 +23,84 @@ type Login struct {
 	User    string        `json:"user"`
 }
 
-var (
-	fileInput  js.Value
-	userName   js.Value
-	passphrase js.Value
-	key        []byte
-	signer     ssh.Signer
-)
+var key []byte
 
 func main() {
-	document := js.Global().Get("document")
-	fileInput = document.Call("getElementById", "file")
-	userName = document.Call("getElementById", "username")
-	passphrase = document.Call("getElementById", "passphrase")
-	fileInput.Set("oninput", js.FuncOf(fileSelect))
-	login := document.Call("getElementById", "button")
-	login.Set("onclick", js.FuncOf(processLogin))
-	select {}
+	log.SetFlags(log.Lshortfile)
+	c := make(chan struct{})
+	// fileInput.Set("oninput", js.FuncOf(fileSelect))
+	println("WASM go initialized")
+	registerCallBacks()
+	<-c
 }
 
-func processLogin(this js.Value, p []js.Value) interface{} {
-	username := userName.Get("value").String()
+func fileSelect(this js.Value, p []js.Value) any {
+	fileInput := js.Global().Get("document").Call("getElementById", "file")
+	fileInput.Get("files").Index(0).Call("arrayBuffer").Call("then", js.FuncOf(func(this js.Value, p []js.Value) any {
+		data := js.Global().Get("Uint8Array").New(p[0])
+		dst := make([]byte, data.Get("byteLength").Int())
+		js.CopyBytesToGo(dst, data)
+		log.Println("data", data.Length(), data.String(), data.Type().String())
+		log.Println("dst", len(dst), string(dst))
+		key = dst
+		return nil
+	}))
+	// Call("then", js.FuncOf(getKey))
+	return nil
+}
+
+func registerCallBacks() {
+	js.Global().Set("validate", js.FuncOf(validate))
+	js.Global().Set("fileSelect", js.FuncOf(fileSelect))
+}
+
+func validate(this js.Value, p []js.Value) any {
+	var signer ssh.Signer
+	var err error
+	var passphraseErr *ssh.PassphraseMissingError
+	username := js.Global().Get("document").Call("getElementById", "username").Get("value").String()
 	passphrase := js.Global().Get("document").Call("getElementById", "passphrase").Get("value").String()
-	message, err := revalidate(username, passphrase)
-	if err != nil {
-		js.Global().Get("alert").Invoke(message + err.Error())
+	if _, err := mail.ParseAddress(username); err != nil {
+		js.Global().Get("alert").Invoke("invalid email in username: " + err.Error())
 		return nil
 	}
+	fileSelect(this, p)
+	log.Println(username, passphrase, len(key), string(key))
+	// return nil
+	if passphrase == "" {
+		signer, err = ssh.ParsePrivateKey(key)
+		if err != nil {
+			if errors.As(err, &passphraseErr) {
+				js.Global().Get("alert").Invoke("passphrase is required")
+			} else {
+				js.Global().Get("alert").Invoke("Invalid Key")
+			}
+			return nil
+		}
+	} else {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(passphrase))
+		if err != nil {
+			js.Global().Get("alert").Invoke("Invalid Key or Passphrase")
+			return nil
+		}
+	}
+	processLogin(username, signer)
+	return nil
+}
+
+func processLogin(username string, signer ssh.Signer) {
 	random := make(chan []byte)
 	go func() {
-		resp, err := http.Get("/hello")
+		resp, err := http.Get("hello")
 		if err != nil {
-			js.Global().Get("alert").Invoke("Error: " + err.Error())
+			js.Global().Get("alert").Invoke("error: " + err.Error())
 			close(random)
 			return
 		}
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			js.Global().Get("alert").Invoke("Error: " + err.Error())
+			js.Global().Get("alert").Invoke("error: " + err.Error())
 			close(random)
 			return
 		}
@@ -69,10 +108,9 @@ func processLogin(this js.Value, p []js.Value) interface{} {
 	}()
 	go func() {
 		data := <-random
-		client := http.Client{Timeout: time.Second}
 		sig, err := signer.Sign(rand.Reader, data)
 		if err != nil {
-			js.Global().Get("alert").Invoke("Error sigining message " + err.Error())
+			js.Global().Get("alert").Invoke("error signing message: " + err.Error())
 			return
 		}
 		login := Login{
@@ -82,82 +120,18 @@ func processLogin(this js.Value, p []js.Value) interface{} {
 		}
 		payload, err := json.Marshal(login)
 		if err != nil {
-			js.Global().Get("alert").Invoke("marshal error " + err.Error())
+			js.Global().Get("alert").Invoke("marshal error: " + err.Error())
 			return
 		}
-		request, err := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(payload))
+		resp, err := http.Post("/login", "application/json", bytes.NewBuffer(payload))
 		if err != nil {
-			js.Global().Get("alert").Invoke("http error " + err.Error())
-			return
-		}
-		resp, err := client.Do(request)
-		if err != nil {
-			js.Global().Get("alert").Invoke("http error " + err.Error())
-			return
-		}
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			js.Global().Get("alert").Invoke("http error " + err.Error())
+			js.Global().Get("alert").Invoke("http error: " + err.Error())
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			js.Global().Get("alert").Invoke("http error " + resp.Status + " " + string(body))
+			js.Global().Get("alert").Invoke("http error: " + resp.Status)
 			return
 		}
-		js.Global().Get("alert").Invoke("login successful")
-		redirect()
+		js.Global().Get("location").Set("href", "/")
 	}()
-
-	return nil
-}
-
-func fileSelect(this js.Value, p []js.Value) interface{} {
-	fileInput.Get("files").Index(0).Call("arrayBuffer").Call("then", js.FuncOf(validate))
-	return nil
-}
-
-func revalidate(username, passphrase string) (string, error) {
-	if _, err := mail.ParseAddress(username); err != nil {
-		return "Invalid email", err
-	}
-	if passphrase == "" {
-		if _, err := ssh.ParsePrivateKey(key); err != nil {
-			return "Invalid key", err
-		}
-	} else {
-		if _, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(passphrase)); err != nil {
-			return "Invalid key or passphrase", err
-		}
-	}
-	return "Valid", nil
-}
-
-func validate(this js.Value, p []js.Value) interface{} {
-	var passphraseErr *ssh.PassphraseMissingError
-	var err error
-	phrase := ""
-	data := js.Global().Get("Uint8Array").New(p[0])
-	dst := make([]byte, data.Get("byteLength").Int())
-	js.CopyBytesToGo(dst, data)
-	key = dst
-	signer, err = ssh.ParsePrivateKey(dst)
-	if err != nil {
-		if errors.As(err, &passphraseErr) {
-			phrase = js.Global().Get("prompt").Invoke("Enter passphrase").String()
-			js.Global().Get("document").Call("getElementById", "passphrase").Set("value", phrase)
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(dst, []byte(phrase))
-			if err != nil {
-				js.Global().Get("alert").Invoke("Invalid passphrase")
-			}
-		} else {
-			js.Global().Get("alert").Invoke("Invalid key")
-		}
-	} else {
-		passphrase.Set("value", "")
-	}
-	return nil
-}
-
-func redirect() {
-	js.Global().Get("location").Set("href", "/")
 }
