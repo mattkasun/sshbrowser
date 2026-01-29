@@ -21,12 +21,6 @@ linters:
         - crypto/rand.Read
         - github.com/devilcove/cookie.Save
         - github.com/devilcove/cookie.Clear
-    embeddedstructfieldcheck:
-      empty-line: false
-      forbid-mutex: true
-    exhaustive:
-      default-signifies-exhaustive: true
-      default-case-required: true
     exhaustruct:
       allow-empty: true
       exclude:
@@ -37,7 +31,6 @@ linters:
     gosec:
       excludes:
         - G104
-        - G303
     mnd:
       ignored-numbers:
       - '2'
@@ -50,10 +43,6 @@ linters:
       ignore-decls:
         - w http.ResponseWriter
         - r *http.Request
-        - fs *flag.FlagSet
-    wrapcheck:
-      extra-ignore-sigs:
-        - os.WriteFile(
   exclusions:
     warn-unused: true
     generated: lax
