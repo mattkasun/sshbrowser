@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 )
@@ -26,7 +27,10 @@ func Logger(next http.Handler) http.Handler {
 		rec := statusRecorder{w, http.StatusOK}
 		next.ServeHTTP(&rec, r)
 		// remote := strings.Split(r.RemoteAddr, ":")[0]
-		remote := r.RemoteAddr
+		remote, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			remote = r.RemoteAddr
+		}
 		if r.Header.Get("X-Forwarded-For") != "" {
 			remote = r.Header.Get("X-Forwarded-For")
 		}

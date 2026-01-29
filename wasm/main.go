@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"net/mail"
 	"syscall/js"
@@ -26,7 +25,6 @@ type Login struct {
 var key []byte
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	c := make(chan struct{})
 	// fileInput.Set("oninput", js.FuncOf(fileSelect))
 	println("WASM go initialized")
@@ -40,8 +38,6 @@ func fileSelect(this js.Value, p []js.Value) any {
 		data := js.Global().Get("Uint8Array").New(p[0])
 		dst := make([]byte, data.Get("byteLength").Int())
 		js.CopyBytesToGo(dst, data)
-		log.Println("data", data.Length(), data.String(), data.Type().String())
-		log.Println("dst", len(dst), string(dst))
 		key = dst
 		return nil
 	}))
@@ -65,8 +61,6 @@ func validate(this js.Value, p []js.Value) any {
 		return nil
 	}
 	fileSelect(this, p)
-	log.Println(username, passphrase, len(key), string(key))
-	// return nil
 	if passphrase == "" {
 		signer, err = ssh.ParsePrivateKey(key)
 		if err != nil {

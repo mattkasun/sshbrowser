@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"path/filepath"
 	"runtime"
@@ -34,7 +35,6 @@ func setupRouter() http.Handler {
 	router.Handle("/page/", http.StripPrefix("/page", auth(restricted)))
 	router.HandleFunc("GET /{$}", mainPage)
 	return Logger(router)
-	// unauthorized
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,14 @@ func restrictedPages() *http.ServeMux {
 	restricted := http.NewServeMux()
 
 	restricted.HandleFunc("GET /ip", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, r.RemoteAddr)
+		remote, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			remote = r.RemoteAddr
+		}
+		if x := r.Header.Get("X-Forwared-For"); x != "" {
+			remote = x
+		}
+		render(w, "myIP", remote)
 	})
 	restricted.HandleFunc("GET /{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -137,8 +144,7 @@ func caller(depth int) string {
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := cookie.Get(r, cookieName); err != nil {
-			slog.Error("get cookie", "error", err)
-			render(w, "error", "unauthorized")
+			processError(w, http.StatusUnauthorized, "unauthorized: "+err.Error())
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -150,30 +156,25 @@ func login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		slog.Error("read body", "error", err)
-		http.Error(w, "read body", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "read body: "+err.Error())
 		return
 	}
 	if err := json.Unmarshal(body, &login); err != nil {
-		slog.Error("unmarshal body", "error", err)
-		http.Error(w, "unmarshal body", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "unmarshal body: "+err.Error())
 		return
 	}
 	pub, ok := users[login.User]
 	if !ok {
-		slog.Error("user not found", "user", login.User)
-		http.Error(w, "no such user", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "no such user")
 		return
 	}
 	pubKey, _, _, _, err := ssh.ParseAuthorizedKey(pub)
 	if err != nil {
-		slog.Error("parse key", "error", err)
-		http.Error(w, "error parsing public key", http.StatusInternalServerError)
+		processError(w, http.StatusBadRequest, "parse public key: "+err.Error())
 		return
 	}
 	if err := pubKey.Verify([]byte(login.Message), &login.Sig); err != nil {
-		slog.Error("verify", "error", err)
-		http.Error(w, "unable to verify key", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "unable to verify key: "+err.Error())
 		return
 	}
 	cookie.Save(w, cookieName, []byte("ssh browser cookie"))
@@ -186,22 +187,25 @@ func register(w http.ResponseWriter, r *http.Request) {
 		Key:  r.FormValue("key"),
 	}
 	if reg.Key == "" {
-		slog.Error("register", "error", "empty key")
-		http.Error(w, "empty key", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "empty key")
 		return
 	}
 	if _, _, _, _, err := ssh.ParseAuthorizedKey([]byte(reg.Key)); err != nil {
-		slog.Error("parse key", "error", err)
-		http.Error(w, "invalid ssh key", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "parse key: "+err.Error())
 		return
 	}
 	_, ok := users[reg.User]
 	if ok {
-		slog.Error("registration", "error", "user exists")
-		http.Error(w, "user exists", http.StatusBadRequest)
+		processError(w, http.StatusBadRequest, "user exists")
 		return
 	}
 	users[reg.User] = []byte(reg.Key)
 	slog.Info("user registration", "user", reg.User)
 	render(w, "login", nil)
+}
+
+func processError(w http.ResponseWriter, code int, message string) {
+	slog.Error("process error", "caller", caller(2), "message", message)
+	w.WriteHeader(code)
+	render(w, "error", message)
 }

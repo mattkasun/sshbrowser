@@ -1,0 +1,20 @@
+{{ define "myIP" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Registration</title>
+    <link rel="icon" href:="/htm/ssh.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css" type="text/css">
+</head>
+
+<body class="theme-dark">
+    <div class="center">
+        <h1>Your IP address</h1>
+        <p>{{.}}</p>
+        <p><button onclick="document.location='/'">Back</button>
+    </div>
+</body>
+
+</html>
+{{end}}
