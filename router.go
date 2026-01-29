@@ -99,7 +99,7 @@ func restrictedPages() *http.ServeMux {
 		if err != nil {
 			remote = r.RemoteAddr
 		}
-		if x := r.Header.Get("X-Forwared-For"); x != "" {
+		if x := r.Header.Get("X-Forwarded-For"); x != "" {
 			remote = x
 		}
 		render(w, "myIP", remote)
