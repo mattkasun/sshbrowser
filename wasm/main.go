@@ -126,6 +126,6 @@ func processLogin(username string, signer ssh.Signer) {
 			js.Global().Get("alert").Invoke("http error: " + resp.Status)
 			return
 		}
-		js.Global().Get("location").Set("href", "/")
+		js.Global().Get("location").Set("href", "/page/1")
 	}()
 }

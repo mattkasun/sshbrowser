@@ -63,7 +63,9 @@ func staticPages(router *http.ServeMux) {
 		http.ServeFile(w, r, "html/wasm_exec.js")
 	})
 	router.HandleFunc("GET /main.wasm", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/main.wasm")
+		w.Header().Add("Content-Type", "application/wasm")
+		w.Header().Add("Content-Encoding", "gzip")
+		http.ServeFile(w, r, "html/main.wasm.gz")
 	})
 	router.HandleFunc("GET /bmc-button.svg", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "html/bmc-button.svg")
