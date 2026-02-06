@@ -32,7 +32,7 @@ import (
 var users = map[string][]byte{}
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.Lshortfile)
 	slog.SetDefault(slog.Default())
 	if err := cookie.New(cookieName, cookieAge); err != nil {
 		slog.Error("set cookier", "error", err)
