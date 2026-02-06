@@ -11,7 +11,7 @@ Proof of Concept for registration/login to website using ssh keys
  * random string is signed with private key
  * username, original message and signed message is returned to server
  * server validates signed message using stored public key
-## [Live Demo](https://demo.nusak.ca)
+## [Live Demo](https://sshbrowser.nusak.ca)
  * registrations are stored in map
  * server is restarted daily; thus all registrations are deleted daily
  
